@@ -1,0 +1,18 @@
+name: tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  safe_events:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Same image as docker compose run busted.
+      - run: docker build -q -t fivem-safe-busted -f docker/lua.Dockerfile .
+      - run: |
+          docker run --rm -v "$PWD:/work" --entrypoint sh fivem-safe-busted -c \
+            'cd /work && for f in $(find safe_events devserver/resources -name "*.lua"); do luac5.4 -p "$f"; done'
+      - run: docker run --rm -v "$PWD:/work" fivem-safe-busted -o TAP
+

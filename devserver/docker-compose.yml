@@ -1,0 +1,58 @@
+# Dev server to try safe_events in a real game.
+#   cp .env.example .env    (fill in the license key)
+#   docker compose run --rm setup    (downloads ESX and imports the database, once)
+#   docker compose up -d fxserver
+name: fivem-dev
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: esx_legacy
+      MARIADB_USER: esx
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 30
+
+  setup:
+    image: alpine:3.20
+    profiles: ["setup"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+      LICENSE_KEY: ${LICENSE_KEY}
+      ALLOWED_IDENTIFIERS: ${ALLOWED_IDENTIFIERS:-}
+      DISCORD_WEBHOOK: ${DISCORD_WEBHOOK:-}
+    volumes:
+      - ./data:/srv/data
+      - ./scripts:/scripts:ro
+      - ./resources:/devresources:ro
+    entrypoint: ["sh", "/scripts/setup.sh"]
+
+  fxserver:
+    build: .
+    image: fivem-dev-fxserver
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    stdin_open: true
+    tty: true
+    ports:
+      - "30120:30120/tcp"
+      - "30120:30120/udp"
+    volumes:
+      - ./data:/srv/data
+      - ../safe_events:/srv/data/resources/[safe]/safe_events:ro
+      - ./resources/safe_events_demo:/srv/data/resources/[safe]/safe_events_demo:ro
+      - ./resources/dev_whitelist:/srv/data/resources/[safe]/dev_whitelist:ro
+      - ./resources/esx_source_check:/srv/data/resources/[safe]/esx_source_check:ro
+
+volumes:
+  db:

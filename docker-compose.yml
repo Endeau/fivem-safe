@@ -1,0 +1,11 @@
+# Nothing is installed on the host: every tool runs in a container.
+services:
+  busted:
+    build:
+      context: .
+      dockerfile: docker/lua.Dockerfile
+    image: fivem-safe-busted
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/work
+
