@@ -1,0 +1,5 @@
+RegisterNetEvent('job:startShift', function()
+    Wait(5000)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    xPlayer.showNotification('Shift started')
+end)

@@ -1,0 +1,234 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SARIF > matches the snapshot 1`] = `
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": [],
+        },
+      ],
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "%5Bjobs%5D/pizza/server.lua",
+                },
+                "region": {
+                  "startColumn": 13,
+                  "startLine": 3,
+                },
+              },
+            },
+          ],
+          "message": {
+            "text": "Montant d'argent contrôlé par le client : amount → addMoney
+Correction : Calculer le montant côté serveur (table de Config indexée par un id) ou le borner avant de payer. Avec safe_events : args = { { name = 'amount', type = 'integer', max = ... } }.",
+          },
+          "partialFingerprints": {
+            "fxaudit/v1": "12d674b34ec484fde890b6473bc0991c",
+          },
+          "properties": {
+            "confidence": "high",
+            "event": "pizza:pay",
+            "resource": "[jobs]/pizza",
+          },
+          "ruleId": "FX001",
+          "ruleIndex": 0,
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "bank/server.lua",
+                },
+                "region": {
+                  "startColumn": 11,
+                  "startLine": 3,
+                },
+              },
+            },
+          ],
+          "message": {
+            "text": "Requête SQL construite avec une valeur du client : name → MySQL.query
+Correction : Passer les valeurs en paramètres (? ou @nom) au lieu de les concaténer dans la requête.",
+          },
+          "partialFingerprints": {
+            "fxaudit/v1": "b540e5d2474aad8bd66edb151a6c303a",
+          },
+          "properties": {
+            "confidence": "high",
+            "event": "bank:find",
+            "resource": "bank",
+          },
+          "ruleId": "FX004",
+          "ruleIndex": 3,
+        },
+      ],
+      "tool": {
+        "driver": {
+          "informationUri": "https://github.com/Endeau/fivem-safe",
+          "name": "fxaudit",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error",
+              },
+              "fullDescription": {
+                "text": "Montant d'argent contrôlé par le client",
+              },
+              "help": {
+                "markdown": "**Correction** : Calculer le montant côté serveur (table de Config indexée par un id) ou le borner avant de payer. Avec safe_events : args = { { name = 'amount', type = 'integer', max = ... } }.",
+                "text": "Calculer le montant côté serveur (table de Config indexée par un id) ou le borner avant de payer. Avec safe_events : args = { { name = 'amount', type = 'integer', max = ... } }.",
+              },
+              "helpUri": "https://github.com/Endeau/fivem-safe#fxaudit",
+              "id": "FX001",
+              "name": "FX001",
+              "properties": {
+                "tags": [
+                  "security",
+                  "fivem",
+                ],
+              },
+              "shortDescription": {
+                "text": "Montant d'argent contrôlé par le client",
+              },
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error",
+              },
+              "fullDescription": {
+                "text": "Item ou quantité contrôlés par le client",
+              },
+              "help": {
+                "markdown": "**Correction** : Vérifier le nom de l'item dans une liste du serveur et borner la quantité. Avec safe_events : type 'string' + enum, type 'integer' + max.",
+                "text": "Vérifier le nom de l'item dans une liste du serveur et borner la quantité. Avec safe_events : type 'string' + enum, type 'integer' + max.",
+              },
+              "helpUri": "https://github.com/Endeau/fivem-safe#fxaudit",
+              "id": "FX002",
+              "name": "FX002",
+              "properties": {
+                "tags": [
+                  "security",
+                  "fivem",
+                ],
+              },
+              "shortDescription": {
+                "text": "Item ou quantité contrôlés par le client",
+              },
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error",
+              },
+              "fullDescription": {
+                "text": "Joueur cible choisi par le client, sans contrôle",
+              },
+              "help": {
+                "markdown": "**Correction** : Vérifier le job ou les droits de l'appelant et sa distance à la cible avant d'agir. Avec safe_events : job = ..., distance = { ... }.",
+                "text": "Vérifier le job ou les droits de l'appelant et sa distance à la cible avant d'agir. Avec safe_events : job = ..., distance = { ... }.",
+              },
+              "helpUri": "https://github.com/Endeau/fivem-safe#fxaudit",
+              "id": "FX003",
+              "name": "FX003",
+              "properties": {
+                "tags": [
+                  "security",
+                  "fivem",
+                ],
+              },
+              "shortDescription": {
+                "text": "Joueur cible choisi par le client, sans contrôle",
+              },
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error",
+              },
+              "fullDescription": {
+                "text": "Requête SQL construite avec une valeur du client",
+              },
+              "help": {
+                "markdown": "**Correction** : Passer les valeurs en paramètres (? ou @nom) au lieu de les concaténer dans la requête.",
+                "text": "Passer les valeurs en paramètres (? ou @nom) au lieu de les concaténer dans la requête.",
+              },
+              "helpUri": "https://github.com/Endeau/fivem-safe#fxaudit",
+              "id": "FX004",
+              "name": "FX004",
+              "properties": {
+                "tags": [
+                  "security",
+                  "fivem",
+                ],
+              },
+              "shortDescription": {
+                "text": "Requête SQL construite avec une valeur du client",
+              },
+            },
+            {
+              "defaultConfiguration": {
+                "level": "warning",
+              },
+              "fullDescription": {
+                "text": "source lu après une attente",
+              },
+              "help": {
+                "markdown": "**Correction** : Copier source dans une variable locale en tête de handler (local src = source) et utiliser src ensuite. safe_events passe déjà le bon source au handler.",
+                "text": "Copier source dans une variable locale en tête de handler (local src = source) et utiliser src ensuite. safe_events passe déjà le bon source au handler.",
+              },
+              "helpUri": "https://github.com/Endeau/fivem-safe#fxaudit",
+              "id": "FX007",
+              "name": "FX007",
+              "properties": {
+                "tags": [
+                  "security",
+                  "fivem",
+                ],
+              },
+              "shortDescription": {
+                "text": "source lu après une attente",
+              },
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error",
+              },
+              "fullDescription": {
+                "text": "Code téléchargé puis exécuté (motif de backdoor)",
+              },
+              "help": {
+                "markdown": "**Correction** : Supprimer ce code et chercher d'où vient la ressource : c'est le motif des backdoors de type cipher. Changer ensuite les mots de passe et la clé du serveur.",
+                "text": "Supprimer ce code et chercher d'où vient la ressource : c'est le motif des backdoors de type cipher. Changer ensuite les mots de passe et la clé du serveur.",
+              },
+              "helpUri": "https://github.com/Endeau/fivem-safe#fxaudit",
+              "id": "FX101",
+              "name": "FX101",
+              "properties": {
+                "tags": [
+                  "security",
+                  "fivem",
+                ],
+              },
+              "shortDescription": {
+                "text": "Code téléchargé puis exécuté (motif de backdoor)",
+              },
+            },
+          ],
+          "semanticVersion": "0.2.0",
+          "version": "0.2.0",
+        },
+      },
+    },
+  ],
+  "version": "2.1.0",
+}
+`;

@@ -1,0 +1,73 @@
+name: fxaudit
+description: Finds FiveM server events that trust what the client sends, and reports them in GitHub code scanning.
+author: Endeau
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  path:
+    description: Folder of FiveM resources to analyze, relative to the repository root.
+    default: .
+  sarif-file:
+    description: Where to write the SARIF report.
+    default: fxaudit.sarif
+  html-file:
+    description: Optional path of an HTML report to write (for instance to keep as an artifact).
+    default: ''
+  upload:
+    description: Upload the SARIF report to GitHub code scanning (needs `security-events write`).
+    default: 'true'
+  fail-on-critical:
+    description: Fail the job when fxaudit finds a critical problem.
+    default: 'true'
+
+outputs:
+  sarif-file:
+    description: Path of the SARIF report.
+    value: ${{ inputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Build fxaudit
+      shell: bash
+      working-directory: ${{ github.action_path }}/fxaudit
+      run: npm ci --no-audit --no-fund && npm run build
+
+    - name: Run fxaudit
+      id: run
+      shell: bash
+      env:
+        FXAUDIT: ${{ github.action_path }}/fxaudit/bin/fxaudit.js
+        TARGET: ${{ inputs.path }}
+        SARIF: ${{ inputs.sarif-file }}
+        HTML: ${{ inputs.html-file }}
+      run: |
+        args=("$TARGET" --no-color --sarif "$SARIF")
+        [ -n "$HTML" ] && args+=(--html "$HTML")
+        set +e
+        node "$FXAUDIT" "${args[@]}"
+        status=$?
+        set -e
+        echo "status=$status" >> "$GITHUB_OUTPUT"
+        # 2 means fxaudit itself failed: stop here.
+        [ "$status" -ne 2 ] || exit 2
+
+    - name: Upload to code scanning
+      if: inputs.upload == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        category: fxaudit
+
+    - name: Fail on critical problems
+      if: inputs.fail-on-critical == 'true' && steps.run.outputs.status == '1'
+      shell: bash
+      run: |
+        echo "::error::fxaudit a trouvé au moins un problème critique (voir l'onglet Security ou le rapport)."
+        exit 1

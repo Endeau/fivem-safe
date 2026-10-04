@@ -9,3 +9,12 @@ services:
     volumes:
       - .:/work
 
+  # npm and node for fxaudit: docker compose run --rm node npm test
+  node:
+    image: node:22-alpine
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      HOME: /tmp
+    working_dir: /work/fxaudit
+    volumes:
+      - .:/work

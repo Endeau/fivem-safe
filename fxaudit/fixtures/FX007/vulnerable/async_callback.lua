@@ -1,0 +1,5 @@
+RegisterNetEvent('garage:list2', function()
+    MySQL.query('SELECT * FROM owned_vehicles', {}, function(rows)
+        TriggerClientEvent('garage:show', source, rows)
+    end)
+end)

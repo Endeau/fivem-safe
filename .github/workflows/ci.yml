@@ -16,3 +16,17 @@ jobs:
             'cd /work && for f in $(find safe_events devserver/resources -name "*.lua"); do luac5.4 -p "$f"; done'
       - run: docker run --rm -v "$PWD:/work" fivem-safe-busted -o TAP
 
+  fxaudit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fxaudit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build && node bin/fxaudit.js --version

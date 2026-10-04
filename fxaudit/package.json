@@ -1,0 +1,49 @@
+{
+  "name": "fxaudit",
+  "version": "0.2.0",
+  "description": "Finds FiveM server events that trust what the client sends: money, items, target players, SQL. Terminal, JSON, SARIF and HTML reports.",
+  "keywords": [
+    "fivem",
+    "esx",
+    "qbcore",
+    "lua",
+    "security",
+    "static-analysis",
+    "sarif",
+    "cfx"
+  ],
+  "homepage": "https://github.com/Endeau/fivem-safe#fxaudit",
+  "bugs": "https://github.com/Endeau/fivem-safe/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Endeau/fivem-safe.git",
+    "directory": "fxaudit"
+  },
+  "author": "Enzo Grassi (Endeau) <grassienzo1.pro@gmail.com> (https://endeau.fr)",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "fxaudit": "./bin/fxaudit.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "fxaudit": "node src/cli.ts",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && mkdir -p dist/vendor && cp -r vendor/luaparse dist/vendor/",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

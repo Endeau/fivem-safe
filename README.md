@@ -2,18 +2,25 @@
 
 **FR** · [English below](#english)
 
-Un outil gratuit et open source pour les serveurs FiveM qui ne veulent plus distribuer d'argent aux tricheurs.
+Deux outils gratuits et open source pour les serveurs FiveM qui ne veulent plus distribuer d'argent aux tricheurs.
 
 Un client modifié peut déclencher n'importe quel event réseau avec les arguments de son choix. Tout handler serveur qui croit ce que le client envoie (un montant, un item, un joueur cible, un bout de SQL) est une faille.
 
-**safe_events** est une ressource qui déclare, pour chaque event, ce que le serveur accepte. Les appels invalides n'atteignent jamais votre handler, et chaque refus est journalisé :
+- **[safe_events](#safe_events)** : une ressource qui déclare, pour chaque event, ce que le serveur accepte. Les appels invalides n'atteignent jamais votre handler.
+- **[fxaudit](#fxaudit)** : un analyseur qui lit vos ressources sans les exécuter et trouve les handlers qui font confiance au client.
+
+Les deux se répondent : chaque alerte de fxaudit propose la correction avec safe_events.
 
 ```
-[safe_events] [safe_events_demo] demo:safePay · joueur 1 (Endeau) · règle max · argument deliveryId · reçu 10000000
-[safe_events] [safe_events_demo] demo:safePay · joueur 1 (Endeau) · règle type · argument deliveryId · reçu -nan
-```
+$ fxaudit resources
 
-Un analyseur statique qui trouve ces handlers dans vos ressources rejoindra ce dépôt prochainement.
+CRIT  FX001  [jobs]/pizza/server.lua:6:13
+       Montant d'argent contrôlé par le client : amount → addMoney  [pizza:pay]
+       Correction : Calculer le montant côté serveur (table de Config indexée par un id) ou le borner
+       avant de payer. Avec safe_events : args = { { name = 'amount', type = 'integer', max = ... } }.
+
+1 critique, 0 avertissement dans 1 fichier sur 87 (143 handlers serveur).
+```
 
 ---
 
@@ -122,19 +129,117 @@ En mode `static`, safe_events vérifie le joueur avec `ESX.IsPlayerLoaded` et li
 
 ---
 
+## fxaudit
+
+### Lancer
+
+Avec Docker, sans rien installer :
+
+```sh
+docker build -t fxaudit https://github.com/Endeau/fivem-safe.git#main:fxaudit
+docker run --rm -v "$PWD/resources:/src" fxaudit /src
+```
+
+Avec Node 20 ou plus (une fois le paquet publié sur npm) :
+
+```sh
+npx fxaudit resources
+```
+
+Options :
+
+| Option | Effet |
+|---|---|
+| `--html rapport.html` | rapport HTML autonome en français, à remettre au propriétaire du serveur |
+| `--sarif fxaudit.sarif` | SARIF 2.1.0 pour GitHub code scanning |
+| `--json` | sortie JSON |
+| `--no-color` | pas de couleurs |
+
+Code de sortie : 0 sans problème critique, 1 s'il y en a au moins un, 2 si fxaudit n'a pas pu tourner.
+
+### Règles
+
+| Règle | Gravité | Ce qu'elle détecte |
+|---|---|---|
+| FX001 | critique | argent dont le montant vient du client (`addMoney`, `addAccountMoney`, `Functions.AddMoney`, `ox_inventory` `AddItem('money')`…) |
+| FX002 | critique | item ou quantité venant du client (`addInventoryItem`, `addWeapon`, `ox_inventory:AddItem`) |
+| FX003 | critique | action sur un joueur cible choisi par le client, sans contrôle de job, de droits ou de distance |
+| FX004 | critique | requête SQL construite par concaténation avec une valeur du client |
+| FX007 | avertissement | `source` lu après un `Wait`, un `await` ou dans un rappel, où il ne vaut plus le joueur |
+| FX101 | critique | réponse de `PerformHttpRequest` passée à `load` : le motif des backdoors |
+
+Un montant borné par un test que NaN traverse (`if amount > 500 then return end`) est signalé en confiance moyenne : un client modifié peut envoyer 0/0, et toute comparaison avec NaN est fausse. Les fonctions d'argent d'ESX refusent NaN d'elles-mêmes et ne sont pas concernées.
+
+Pour ignorer une alerte vérifiée à la main, commentez la ligne ou celle du dessus : `-- fxaudit-ignore FX001`.
+
+fxaudit lit la syntaxe propre à FiveM (`+=`, `?.`, les hash entre backticks, `<const>`), ignore les scripts client déclarés dans les `fxmanifest.lua` et comprend les handlers ESX, QBCore et ox_lib.
+
+### Dans une CI
+
+GitHub, avec l'action de ce dépôt (les alertes arrivent dans l'onglet Security) :
+
+```yaml
+# .github/workflows/fxaudit.yml
+name: fxaudit
+on: [push, pull_request]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  fxaudit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Endeau/fivem-safe@main
+        with:
+          path: resources
+          html-file: fxaudit.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fxaudit-report
+          path: fxaudit.html
+```
+
+GitLab CI :
+
+```yaml
+fxaudit:
+  image: node:22-alpine
+  script:
+    - npx --yes fxaudit resources --html fxaudit.html
+  artifacts:
+    when: always
+    paths: [fxaudit.html]
+```
+
+### Limites
+
+- L'analyse s'arrête au fichier : un event déclaré dans un fichier et traité dans un autre n'est pas suivi.
+- Les bornes basses ne sont pas suivies : un montant négatif n'est pas signalé.
+- Les API internes de QBox et d'ox_inventory (`Inventory.AddItem`…) ne sont pas encore modélisées. Zéro alerte sur ces ressources ne prouve rien.
+- FX003 est une heuristique : toute condition sur le job ou la cible la fait taire.
+- Aucune alerte ne veut pas dire aucune faille.
+
+Mesure sur le code officiel d'ESX (esx_core et esx-legacy-addons, 617 fichiers) : 3 alertes, toutes vraies, aucun faux positif ; les 2 alertes FX007 ont été confirmées en jeu. Le détail est dans [fxaudit/CORPUS.md](fxaudit/CORPUS.md).
+
+---
+
 ## Développement
 
 Rien n'est installé sur la machine : tout tourne dans Docker.
 
 ```sh
 docker compose run --rm busted                 # tests de safe_events
+docker compose run --rm node npm ci            # fxaudit, une fois
+docker compose run --rm node npm test          # tests de fxaudit
 ```
 
 `devserver/` monte un FXServer avec ESX Legacy et une ressource de démo (`/se_all`) pour essayer safe_events en jeu. Il faut une clé de licence Cfx : voir `devserver/.env.example`.
 
 ## Sécurité
 
-Vous avez trouvé une faille dans safe_events ? Ouvrez un signalement privé (onglet Security → Report a vulnerability), pas une issue publique. Voir [SECURITY.md](SECURITY.md).
+Vous avez trouvé une faille dans safe_events ou fxaudit ? Ouvrez un signalement privé (onglet Security → Report a vulnerability), pas une issue publique. Voir [SECURITY.md](SECURITY.md).
 
 ## Licence
 
@@ -146,11 +251,14 @@ MIT, © 2026 Enzo Grassi ([endeau.fr](https://endeau.fr)).
 
 ## English
 
-A free, open-source tool for FiveM servers that are done paying cheaters.
+Two free, open-source tools for FiveM servers that are done paying cheaters.
 
 A modified client can trigger any net event with any arguments. Every server handler that trusts what the client sends (an amount, an item, a target player, a piece of SQL) is an exploit.
 
-**safe_events** is a resource where each event declares what the server accepts. Invalid calls never reach your handler, and every refusal is logged. A static analyzer that finds those handlers in your resources will join this repository soon.
+- **safe_events**: a resource where each event declares what the server accepts. Invalid calls never reach your handler.
+- **fxaudit**: a static analyzer that reads your resources without running them and finds the handlers that trust the client.
+
+Each fxaudit finding suggests the fix with safe_events. Messages and reports are in French for now.
 
 ### safe_events
 
@@ -189,9 +297,23 @@ end)
 - `set safe_events:esxPlayer "static"` avoids `ESX.GetPlayerFromId`, measured in game at about 300 µs per call: the checks use `ESX.IsPlayerLoaded` and the job through the static player (about 20 µs), and the handler gets a static player like `ESX.Player(src)` (methods work, fields like `xPlayer.job` do not). The default, `"full"`, keeps the usual xPlayer.
 - Limits: ESX Legacy only for now; safe_events validates input, it does not replace an anticheat or server-side business logic.
 
+### fxaudit
+
+```sh
+docker build -t fxaudit https://github.com/Endeau/fivem-safe.git#main:fxaudit
+docker run --rm -v "$PWD/resources:/src" fxaudit /src --html report.html --sarif fxaudit.sarif
+# or, once published: npx fxaudit resources
+```
+
+Rules: FX001 client-controlled money, FX002 client-controlled items or counts, FX003 client-chosen target player without checks, FX004 SQL built from client data, FX007 `source` read after a wait, FX101 HTTP response passed to `load` (backdoor pattern). Bounds that NaN goes through are reported with medium confidence. Silence a reviewed line with `-- fxaudit-ignore FX001`. Exit code 1 on critical findings.
+
+GitHub Action: `uses: Endeau/fivem-safe@main` with `path`, `sarif-file`, `html-file`, `upload`, `fail-on-critical` (see the workflow above).
+
+Limits: per-file analysis, no lower bounds, QBox and ox_inventory internals not modeled yet, and no findings does not mean no exploit. On official ESX code (617 files): 3 findings, all true, no false positive; both FX007 findings were confirmed in game.
+
 ### Security
 
-Found a vulnerability in safe_events? Open a private advisory (Security tab → Report a vulnerability), not a public issue.
+Found a vulnerability in safe_events or fxaudit? Open a private advisory (Security tab → Report a vulnerability), not a public issue.
 
 ### License
 

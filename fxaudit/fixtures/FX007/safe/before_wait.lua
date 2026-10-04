@@ -1,0 +1,5 @@
+RegisterNetEvent('job:ping', function()
+    TriggerClientEvent('job:pong', source)
+    Wait(100)
+    print('done')
+end)

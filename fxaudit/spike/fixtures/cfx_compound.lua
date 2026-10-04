@@ -1,0 +1,12 @@
+local total = 0
+total += 5
+total -= 1
+total *= 2
+total /= 2
+local flags = 0
+flags <<= 1
+flags >>= 1
+flags &= 3
+flags |= 4
+flags ^= 2
+xPlayer.money += amount
