@@ -55,7 +55,7 @@ SafeEvents.callback('demo:price', {
 end)
 
 -- 4. Kick test: only the police may call it, others are kicked.
-SafeEvents.register('demo:policeOnly', { job = 'police' }, function(xPlayer)
+SafeEvents.register('demo:policeOnly', { job = 'police', onReject = 'log+kick' }, function(xPlayer)
   log('ACCEPTÉ demo:policeOnly pour %s', xPlayer.getName())
   xPlayer.showNotification('[safe_events] accès police accordé')
 end)

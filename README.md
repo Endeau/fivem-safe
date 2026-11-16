@@ -80,7 +80,7 @@ Options de `spec` (toutes facultatives) :
 | `job` | `'police'`, `{ 'police', 'sheriff' }` ou `{ name = 'police', minGrade = 2 }` | job requis |
 | `distance` | `{ coords = vec3(...) ou liste de vec3, max = 8.0 }` ou `{ netIdArg = 'vehicle', max = 5.0 }` | distance maximale en mètres à un point, au plus proche d'une liste, ou à l'entité dont le client donne le netId |
 | `rate` | `{ calls = 1, per = 30 }` | appels autorisés par joueur sur la période, en secondes |
-| `onReject` | `'log+kick'` (défaut), `'log'`, `'drop'` ou `function(source, raison)` | que faire d'un appel refusé |
+| `onReject` | `'log'` (défaut), `'log+kick'`, `'drop'` ou `function(source, raison)` | que faire d'un appel refusé |
 
 Types d'arguments :
 
@@ -99,7 +99,7 @@ Une spec mal écrite (option inconnue, type inconnu, `min` plus grand que `max`,
 
 ### Refus, alertes et mode audit
 
-Un appel refusé n'appelle pas le handler. Selon `onReject`, il est journalisé dans la console (`[safe_events] [ressource] event · joueur · règle · argument · valeur reçue`), envoyé au webhook Discord (une alerte par joueur et par event et par minute au plus) et le joueur est expulsé.
+Un appel refusé n'appelle pas le handler. Selon `onReject`, il est journalisé dans la console (`[safe_events] [ressource] event · joueur · règle · argument · valeur reçue`), envoyé au webhook Discord (une alerte par joueur et par event et par minute au plus), et le joueur est expulsé seulement avec `'log+kick'`. L'expulsion n'est pas le défaut : une spec trop stricte pour votre serveur expulserait des joueurs honnêtes. Activez-la event par event, une fois la spec vérifiée en mode audit.
 
 Règles possibles dans un refus : `player` (joueur ESX pas encore chargé), `too_many_args`, `required`, `type`, `min`, `max`, `maxLen`, `pattern`, `enum`, `maxItems`, `items`, `job`, `distance`, `rate`.
 
@@ -289,7 +289,7 @@ end)
 ```
 
 - `args` is an ordered list; types are `integer`, `number`, `string`, `boolean`, `vector3`, `table`, with `min`, `max`, `maxLen`, `pattern`, `enum`, `maxItems`, `items`, `optional`. NaN and infinity are always refused. **`maxLen` counts bytes**: an accented letter is 2 bytes in UTF-8.
-- `job`, `distance` (to a point, the closest of a list, or an entity given by netId), `rate` per player, `onReject` (`'log+kick'` by default, `'log'`, `'drop'` or a function).
+- `job`, `distance` (to a point, the closest of a list, or an entity given by netId), `rate` per player, `onReject` (`'log'` by default, `'log+kick'` to also kick, `'drop'` or a function).
 - The handler gets the ESX player, the validated arguments by name, and a `source` that stays valid after a `Wait`.
 - `SafeEvents.callback` does the same for ox_lib callbacks.
 - Audit mode logs violations and lets calls through, to roll safe_events out on a live server.

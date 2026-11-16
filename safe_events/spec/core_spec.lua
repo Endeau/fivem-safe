@@ -212,14 +212,15 @@ describe('SafeEvents.register', function()
       trigger(env, 'a', 1)
     end
 
-    it("reports and asks for a kick by default ('log+kick')", function()
+    it("reports without kick by default ('log')", function()
       reject(nil)
-      assert.is_true(env.reports[1].kick)
+      assert.same(1, #env.reports)
+      assert.is_false(env.reports[1].kick)
     end)
 
-    it("reports without kick for 'log'", function()
-      reject('log')
-      assert.is_false(env.reports[1].kick)
+    it("asks for a kick only with 'log+kick'", function()
+      reject('log+kick')
+      assert.is_true(env.reports[1].kick)
     end)
 
     it("stays silent for 'drop'", function()

@@ -6,6 +6,8 @@ local core = {}
 
 local SPEC_KEYS = { args = true, job = true, distance = true, rate = true, onReject = true }
 local ACTIONS = { drop = true, log = true, ['log+kick'] = true }
+-- Kicking stays opt-in: a spec that is too strict for a server would otherwise kick honest players.
+local DEFAULT_ON_REJECT = 'log'
 
 local function specError(name, message, ...)
   error(("safe_events: '%s' " .. message):format(name, ...), 0)
@@ -80,7 +82,7 @@ function core.new(env)
     for key in pairs(spec) do
       if not SPEC_KEYS[key] then specError(name, "has unknown option '%s'", key) end
     end
-    local onReject = spec.onReject or 'log+kick'
+    local onReject = spec.onReject or DEFAULT_ON_REJECT
     if type(onReject) ~= 'function' and not ACTIONS[onReject] then
       specError(name, "onReject must be 'drop', 'log', 'log+kick' or a function")
     end
